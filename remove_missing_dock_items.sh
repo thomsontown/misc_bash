@@ -102,7 +102,6 @@ for PREFERENCE in ${PREFERENCES[@]} ; do
 			#	display item removal
 			echo "REMOVING: $OTHER_PATH"
 
-
 			#	remove missing other from dock if path does not exist
 			/usr/libexec/PlistBuddy -c "delete :persistent-others:'${INDEX}'" "${PREFERENCE}"
 			/usr/libexec/PlistBuddy -c save "${PREFERENCE}" &> /dev/null
