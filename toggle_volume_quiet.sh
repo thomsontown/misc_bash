@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-#	This script was written to quickly lower the volume within OS X but no to mute. 
-#	Running the script a second time will restore the volume to the previous setting.
+#	This script was written to quickly lower the volume within OS X but not to mute. 
+#	Running the script again will restore the volume to the previous saved setting.
 #	Each successive running of the script will toggle the volume appropriately. 
 
 
@@ -29,7 +29,7 @@ if [ $CURRENT_VOLUME -gt 1 ]; then
 	echo CURRENT_VOLUME="$CURRENT_VOLUME" > "$HOME/.current_volume"
 
 	#	set output volume to lowest setting
-	if ! /usr/bin/osascript -e "set volume without output muted output volume 1"; then 
+	if ! /usr/bin/osascript -e "set volume output volume 1"; then 
 		echo "ERROR: Unable to set output volume."
 		exit $LINENO
 	fi
@@ -38,14 +38,14 @@ else
 	#	load previously saved output volume if available
 	if [ -f "$HOME/.current_volume" ]; then
 		source "$HOME/.current_volume"
-		if ! /usr/bin/osascript -e "set volume without output muted output volume $CURRENT_VOLUME"; then 
+		if ! /usr/bin/osascript -e "set volume output volume $CURRENT_VOLUME"; then 
 			echo "ERROR: Unable to set output volume."
 			exit $LINENO
 		fi
 	else 
 
 		#	no current output volume found, set volume to 35
-		if ! /usr/bin/osascript -e "set volume without output muted output volume 35"; then 
+		if ! /usr/bin/osascript -e "set volume output volume 35"; then 
 			echo "ERROR: Unable to set output volume."
 			exit $LINENO
 		fi
