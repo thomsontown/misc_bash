@@ -68,7 +68,6 @@ fi
 
 #	remove any trailing slashes from source path
 SOURCE="${SOURCE%/}"
-echo "SOURCE: $SOURCE"
 
 
 #	if the source path contains /Applications, update the destination
