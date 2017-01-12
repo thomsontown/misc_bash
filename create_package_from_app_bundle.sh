@@ -18,11 +18,11 @@
 #	Date:		11-07-2014
 	
 
-SOURCE=${1%/}						#	application bundle path as command line argument
-DESTINATION="/Applications"			#	install destination of application
-PREFIX="SW - "						#	prefix of package file name
-SUFFIX=" v"							#	suffix of package file name before version number
-PKGPATH="$HOME/Desktop/"			#	location where package file will be saved
+SOURCE=${1%/}                       #	application bundle path as command line argument
+DESTINATION="/Applications"         #	install destination of application
+PREFIX="SW - "                      #	prefix of package file name
+SUFFIX=" v"                         #	suffix of package file name before version number
+PKGPATH="$HOME/Desktop/"            #	location where package file will be saved
 
 
 function onExit() {
