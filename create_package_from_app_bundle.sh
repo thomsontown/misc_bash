@@ -10,7 +10,7 @@
 #	I've added variables for PREFIX and SUFFIX so as to be able to customize 
 #	the name of the newly generated package file.
 
-#	The resulting package files are NOT package archives suitable for uploading
+#	The resulting package files are NOT product archives suitable for uploading
 #	to Apple for use in the Mac App Store. They are, however, ideal for use 
 #	within JAMF PRO. 
 
@@ -44,8 +44,8 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 
-#	copy script to destination -- optional
-if [ ! -x /usr/local/bin/quickpkg ]; then /bin/cp "$0" /usr/local/bin/quickpkg; fi
+#	install script to local bin with short name -- optional
+if [ ! -x /usr/local/bin/quickpkg ]; then /usr/bin/install -o 0 -g 0 "$0" /usr/local/bin/quickpkg; fi
 
 
 #	get the path to the source app to package
