@@ -52,17 +52,10 @@ if [ ! -x /usr/local/bin/quickpkg ]; then /bin/cp "$0" /usr/local/bin/quickpkg; 
 if [ -z "$SOURCE" ]; then
 	echo "Please enter the path to the application you want to package, or drag and drop it into this window. Then press the enter key."
 	read SOURCE
-	if [ ! -x "$SOURCE" ]; then 
+	if [ ! -d "$SOURCE" ]; then 
 		echo "ERROR: The application cannot be found."
 		exit $LINENO
 	fi
-fi
-
-
-#	verify source exists
-if [ ! -d "${SOURCE}" ]; then 
-	echo "ERROR: Unable to find the specified application bundle."
-	exit $LINENO
 fi
 
 
@@ -133,11 +126,11 @@ fi
 
 
 #	display variables
-echo Application Name: 			$NAME
-echo Application Version: 		$VERSION
-echo Application Identifier:	$IDENTIFIER
-echo Application Source:		\"$TMP_SOURCE\"
-echo Application Destination:	\"$DESTINATION\"
+echo Application Name:  $NAME
+echo Application Version:  $VERSION
+echo Application Identifier:  $IDENTIFIER
+echo Application Source:  \"$TMP_SOURCE\"
+echo Application Destination:  \"$DESTINATION\"
 
 
 #	set permissions
