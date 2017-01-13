@@ -23,8 +23,23 @@ TMP_PATH=`/usr/bin/mktemp -d /tmp/PKGINFO.XXXX`
 DEBUG=false
 
 
-#	verify file exists and is of type pkg
-if [ ! -f "$FILE_PATH" ] || [ "$FILE_NAME##*." == "pkg" ]; then
+function onExit() {
+	ERROR_CODE=$?
+	if [ -d "$TMP_PATH" ]; then /bin/rm -rf "$TMP_PATH"; fi
+	echo  "Exited with code #${ERROR_CODE} after $SECONDS second(s)."
+}
+
+
+#	make sure to cleanup on exit
+trap onExit EXIT
+
+
+#	install script to local bin with short name -- optional
+if [ ! -x /usr/local/bin/pkgver ]; then /usr/bin/install "$0" /usr/local/bin/pkgver; fi
+
+
+#	verify package file
+if ! /usr/bin/mdls -name kMDItemKind "$FILE_PATH" | /usr/bin/grep "Installer package" &> /dev/null; then
 	echo "ERROR: Unable to find valid package file."
 	echo "USAGE: ${0##*/} /path/to/package"
 	exit $LINENO
@@ -76,7 +91,3 @@ done
 
 #	change back to original folder
 popd > /dev/null
-
-
-#	remove tmp files
-/bin/rm -rf "$TMP_PATH"
