@@ -39,7 +39,7 @@ if [ ! -x /usr/local/bin/pkgver ]; then /usr/bin/install "$0" /usr/local/bin/pkg
 
 
 #	verify package file
-if ! /usr/bin/mdls -name kMDItemKind "$FILE_PATH" | /usr/bin/grep "Installer package" &> /dev/null; then
+if ! /usr/bin/mdls -name kMDItemKind "$FILE_PATH" | /usr/bin/grep -i "installer" &> /dev/null; then
 	echo "ERROR: Unable to find valid package file."
 	echo "USAGE: ${0##*/} /path/to/package"
 	exit $LINENO
