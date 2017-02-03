@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #	This script was written to quickly and easily create "product archives"  
-#	from for simple application bundles that are typically downloaded within
+#	for simple application bundles that are typically downloaded within
 #	a disk image file or in a compressed file format. The script must run as 
 #	root. You can include the path to the application bundle as a parameter 
 #	when running the sciprt, or when prompted, enter it manually or drag and 
