@@ -1,7 +1,7 @@
 #!/bin/sh
 
-#	This script was written to quickly and easily create "product archives"  
-#	for simple application bundles that are typically downloaded within
+#	This script was written to quickly and easily create "component" package 
+#	files for simple application bundles that are typically downloaded within
 #	a disk image file or in a compressed file format. The script must run as 
 #	root. You can include the path to the application bundle as a parameter 
 #	when running the sciprt, or when prompted, enter it manually or drag and 
@@ -10,15 +10,19 @@
 #	I've added variables for PREFIX and SUFFIX so as to be able to customize 
 #	the name of the newly generated package file.
 
+#	The resulting package files are NOT package archives suitable for uploading
+#	to Apple for use in the Mac App Store. They are, however, ideal for use 
+#	within JAMF PRO. 
+
 #	Author: 	Andrew Thomson
 #	Date:		11-07-2014
 	
 
-SOURCE=${1%/}                       #	application bundle path as command line argument
-DESTINATION="/Applications"         #	install destination of application
-PREFIX="SW - "                      #	prefix of package file name
-SUFFIX=" v"                         #	suffix of package file name before version number
-PKGPATH="$HOME/Desktop/"            #	location where package file will be saved
+SOURCE=${1%/}						#	application bundle path as command line argument
+DESTINATION="/Applications"			#	install destination of application
+PREFIX="SW - "						#	prefix of package file name
+SUFFIX=" v"							#	suffix of package file name before version number
+PKGPATH="$HOME/Desktop/"			#	location where package file will be saved
 
 
 function onExit() {
@@ -40,8 +44,8 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 
-#	install script to local bin with short name -- optional
-if [ ! -x /usr/local/bin/quickpkg ]; then /usr/bin/install -o 0 -g 0 "$0" /usr/local/bin/quickpkg; fi
+#	copy script to destination -- optional
+if [ ! -x /usr/local/bin/quickpkg ]; then /bin/cp "$0" /usr/local/bin/quickpkg; fi
 
 
 #	get the path to the source app to package
@@ -64,6 +68,7 @@ fi
 
 #	remove any trailing slashes from source path
 SOURCE="${SOURCE%/}"
+echo "SOURCE: $SOURCE"
 
 
 #	if the source path contains /Applications, update the destination
@@ -116,7 +121,16 @@ fi
 
 #	make temp folder
 TMP_SOURCE=`/usr/bin/mktemp -d "/tmp/$NAME.XXXX"`
+TMP_SOURCE="$TMP_SOURCE/"
 TMP_PLIST=`/usr/bin/mktemp "/tmp/$NAME.XXXX"`
+
+
+#	copy source to temp location
+echo "Copying source to temp location . . ."
+if ! /bin/cp -R "$SOURCE" "$TMP_SOURCE/" 2> /dev/null; then
+	echo "ERROR: Unable to copy source to temp location."
+	exit $LINENO
+fi
 
 
 #	display variables
@@ -128,43 +142,36 @@ echo Application Destination:	\"$DESTINATION\"
 
 
 #	set permissions
-if ! /bin/chmod -R 755 "${SOURCE%/}" 2> /dev/null; then
+if ! /bin/chmod -R 755 "$TMP_SOURCE" 2> /dev/null; then
 	echo "ERROR: Unable to set permissions."
 	exit $LINENO
 fi
 
 
 #	remove any extended attributes
-if ! /usr/bin/xattr -rc "${SOURCE%/}" 2> /dev/null; then 
+if ! /usr/bin/xattr -rc "$TMP_SOURCE" 2> /dev/null; then 
 	echo "ERROR: Unable to remove extended attributes."
 	exit $LINENO
 fi
 
 
 #	generate component property file
-if ! /usr/bin/pkgbuild --analyze --root "${SOURCE%/}" "$TMP_PLIST"; then
+if ! /usr/bin/pkgbuild --analyze --root "$TMP_SOURCE" "$TMP_PLIST"; then
 	echo "ERROR: Unable to analyze source."
 	exit $LINENO
 fi
 
 
-#	build component package
-if ! /usr/bin/pkgbuild --root "${SOURCE%/}" --install-location "${DESTINATION}" --component-plist "${TMP_PLIST}" --identifier "${IDENTIFIER}" --version "${VERSION}" "/tmp/${IDENTIFIER}.pkg" 2> /dev/null; then
-	echo "An error occurred while building the package."
-	exit $LINENO
-fi
-
-
-#	build product archive
+#	build package file
 if [[ -z $DEVELOPER_ID ]]; then
 	echo "Building package without digital signature . . ."
-	if ! /usr/bin/productbuild --package "${TEMP_SOURCE%/}/payload.pkg" "${DESTINATION}" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
+	if ! /usr/bin/pkgbuild --root "${TMP_SOURCE}" --install-location "${DESTINATION}" --component-plist "${TMP_PLIST}" --identifier "${IDENTIFIER}" --version "${VERSION}" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
 		echo "An error occurred while building the package."
 		exit $LINENO
 	fi
 else
 	echo "Building package with digital signature . . ."
-	if ! /usr/bin/productbuild --package "${TEMP_SOURCE%/}/payload.pkg" "${DESTINATION}" --sign "$DEVELOPER_ID" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
+	if ! /usr/bin/pkgbuild --root "${TMP_SOURCE}" --install-location "${DESTINATION}" --sign "$DEVELOPER_ID" --component-plist "${TMP_PLIST}" --identifier "${IDENTIFIER}" --version "${VERSION}" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
 		echo "An error occurred while building the package."
 		exit $LINENO
 	fi
