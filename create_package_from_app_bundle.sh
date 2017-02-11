@@ -18,16 +18,15 @@
 #	Date:		11-07-2014
 	
 
-SOURCE=${1%/}						#	application bundle path as command line argument
-DESTINATION="/Applications"			#	install destination of application
-PREFIX="SW - "						#	prefix of package file name
-SUFFIX=" v"							#	suffix of package file name before version number
-PKGPATH="$HOME/Desktop/"			#	location where package file will be saved
+SOURCE=${1%/}                    #	application bundle path as command line argument
+DESTINATION="/Applications"      #	install destination of application
+PREFIX="SW - "                   #	prefix of package file name
+SUFFIX=" v"                      #	suffix of package file name before version number
+PKGPATH="$HOME/Desktop/"         #	location where package file will be saved
 
 
 function onExit() {
 	ERROR_CODE=$?
-	if [ -d "$TMP_SOURCE" ]; then /bin/rm -rf "$TMP_SOURCE"; fi
 	if [ -f "$TMP_PLIST" ]; then /bin/rm "$TMP_PLIST"; fi
 	echo  "Exited with code #${ERROR_CODE} after $SECONDS second(s)."
 }
@@ -44,8 +43,8 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 
-#	copy script to destination -- optional
-if [ ! -x /usr/local/bin/quickpkg ]; then /bin/cp "$0" /usr/local/bin/quickpkg; fi
+#	install script to destination -- optional
+if [ ! -x /usr/local/bin/quickpkg ]; then /usr/bin/install -g 0 -o 0 "$0" /usr/local/bin/quickpkg; fi
 
 
 #	get the path to the source app to package
@@ -66,14 +65,9 @@ if [ ! -d "${SOURCE}" ]; then
 fi
 
 
-#	remove any trailing slashes from source path
-SOURCE="${SOURCE%/}"
-echo "SOURCE: $SOURCE"
-
-
 #	if the source path contains /Applications, update the destination
 if [[ ${SOURCE} == *"/Applications"* ]]; then 
-	if ! DESTINATION=`/usr/bin/dirname "${SOURCE}"`; then
+	if ! DESTINATION=`/usr/bin/dirname "${SOURCE%/}"`; then
 		echo "ERROR: Unable to set the target destination."
 		exit $LINENO
 	fi
@@ -81,24 +75,24 @@ fi
 
 
 #	read info.plist to get source attributes
-if [ -f "${SOURCE}/Contents/Info.plist" ]; then
+if [ -f "${SOURCE%/}/Contents/Info.plist" ]; then
 	
 	#	get app bundle name 
-	if ! NAME=`/usr/bin/defaults read "${SOURCE}/Contents/Info" CFBundleName 2> /dev/null`; then 
+	if ! NAME=`/usr/bin/defaults read "${SOURCE%/}/Contents/Info" CFBundleName 2> /dev/null`; then 
 		
 		#	as alternate
-		NAME=`/usr/bin/basename -a .app "$SOURCE"`
+		NAME=`/usr/bin/basename -a .app "${SOURCE%/}"`
 	fi	
 	
 	#	get app bundle version
-	if ! VERSION=`/usr/bin/defaults read "${SOURCE}/Contents/Info" CFBundleShortVersionString 2> /dev/null`; then
+	if ! VERSION=`/usr/bin/defaults read "${SOURCE%/}/Contents/Info" CFBundleShortVersionString 2> /dev/null`; then
 
 		#	as alternate
-		VERSION=`/usr/bin/defaults read "${SOURCE}/Contents/Info" CFBundleVersionString 2> /dev/null`
+		VERSION=`/usr/bin/defaults read "${SOURCE%/}/Contents/Info" CFBundleVersionString 2> /dev/null`
 	fi
 	
 	#	get app bundle identifier
-	IDENTIFIER=`/usr/bin/defaults read "${SOURCE}/Contents/Info" CFBundleIdentifier 2> /dev/null` 
+	IDENTIFIER=`/usr/bin/defaults read "${SOURCE%/}/Contents/Info" CFBundleIdentifier 2> /dev/null` 
 fi
 
 
@@ -119,44 +113,34 @@ if /usr/bin/security find-certificate -c "Developer ID Installer" &> /dev/null; 
 fi
 
 
-#	make temp folder
-TMP_SOURCE=`/usr/bin/mktemp -d "/tmp/$NAME.XXXX"`
-TMP_SOURCE="$TMP_SOURCE/"
+#	make temp file
 TMP_PLIST=`/usr/bin/mktemp "/tmp/$NAME.XXXX"`
 
 
-#	copy source to temp location
-echo "Copying source to temp location . . ."
-if ! /bin/cp -R "$SOURCE" "$TMP_SOURCE/" 2> /dev/null; then
-	echo "ERROR: Unable to copy source to temp location."
-	exit $LINENO
-fi
-
-
 #	display variables
-echo Application Name: 			$NAME
-echo Application Version: 		$VERSION
-echo Application Identifier:	$IDENTIFIER
-echo Application Source:		\"$TMP_SOURCE\"
-echo Application Destination:	\"$DESTINATION\"
+echo Application Name:          $NAME
+echo Application Version:       $VERSION
+echo Application Identifier:    $IDENTIFIER
+echo Application Source:      \"${SOURCE%/}\"
+echo Application Destination: \"$DESTINATION\"
 
 
 #	set permissions
-if ! /bin/chmod -R 755 "$TMP_SOURCE" 2> /dev/null; then
+if ! /bin/chmod -R 755 "${SOURCE%/}" 2> /dev/null; then
 	echo "ERROR: Unable to set permissions."
 	exit $LINENO
 fi
 
 
 #	remove any extended attributes
-if ! /usr/bin/xattr -rc "$TMP_SOURCE" 2> /dev/null; then 
+if ! /usr/bin/xattr -rc "${SOURCE%/}" 2> /dev/null; then 
 	echo "ERROR: Unable to remove extended attributes."
 	exit $LINENO
 fi
 
 
 #	generate component property file
-if ! /usr/bin/pkgbuild --analyze --root "$TMP_SOURCE" "$TMP_PLIST"; then
+if ! /usr/bin/pkgbuild --analyze --root "${SOURCE%/}" "$TMP_PLIST"; then
 	echo "ERROR: Unable to analyze source."
 	exit $LINENO
 fi
@@ -165,13 +149,13 @@ fi
 #	build package file
 if [[ -z $DEVELOPER_ID ]]; then
 	echo "Building package without digital signature . . ."
-	if ! /usr/bin/pkgbuild --root "${TMP_SOURCE}" --install-location "${DESTINATION}" --component-plist "${TMP_PLIST}" --identifier "${IDENTIFIER}" --version "${VERSION}" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
+	if ! /usr/bin/pkgbuild --component "${SOURCE%/}" --install-location "${DESTINATION}" --component-plist "${TMP_PLIST}" --identifier "${IDENTIFIER}" --version "${VERSION}" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
 		echo "An error occurred while building the package."
 		exit $LINENO
 	fi
 else
 	echo "Building package with digital signature . . ."
-	if ! /usr/bin/pkgbuild --root "${TMP_SOURCE}" --install-location "${DESTINATION}" --sign "$DEVELOPER_ID" --component-plist "${TMP_PLIST}" --identifier "${IDENTIFIER}" --version "${VERSION}" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
+	if ! /usr/bin/pkgbuild --component "${SOURCE%/}" --install-location "${DESTINATION}" --sign "$DEVELOPER_ID" --component-plist "${TMP_PLIST}" --identifier "${IDENTIFIER}" --version "${VERSION}" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
 		echo "An error occurred while building the package."
 		exit $LINENO
 	fi
