@@ -27,7 +27,6 @@ PKGPATH="$HOME/Desktop/"         #	location where package file will be saved
 
 function onExit() {
 	ERROR_CODE=$?
-	if [ -f "$TMP_PLIST" ]; then /bin/rm "$TMP_PLIST"; fi
 	echo  "Exited with code #${ERROR_CODE} after $SECONDS second(s)."
 }
 
@@ -113,10 +112,6 @@ if /usr/bin/security find-certificate -c "Developer ID Installer" &> /dev/null; 
 fi
 
 
-#	make temp file
-TMP_PLIST=`/usr/bin/mktemp "/tmp/$NAME.XXXX"`
-
-
 #	display variables
 echo Application Name:          $NAME
 echo Application Version:       $VERSION
@@ -139,23 +134,16 @@ if ! /usr/bin/xattr -rc "${SOURCE%/}" 2> /dev/null; then
 fi
 
 
-#	generate component property file
-if ! /usr/bin/pkgbuild --analyze --root "${SOURCE%/}" "$TMP_PLIST"; then
-	echo "ERROR: Unable to analyze source."
-	exit $LINENO
-fi
-
-
 #	build package file
 if [[ -z $DEVELOPER_ID ]]; then
 	echo "Building package without digital signature . . ."
-	if ! /usr/bin/pkgbuild --component "${SOURCE%/}" --install-location "${DESTINATION}" --component-plist "${TMP_PLIST}" --identifier "${IDENTIFIER}" --version "${VERSION}" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
+	if ! /usr/bin/pkgbuild --component "${SOURCE%/}" --install-location "${DESTINATION}" --identifier "${IDENTIFIER}" --version "${VERSION}" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
 		echo "An error occurred while building the package."
 		exit $LINENO
 	fi
 else
 	echo "Building package with digital signature . . ."
-	if ! /usr/bin/pkgbuild --component "${SOURCE%/}" --install-location "${DESTINATION}" --sign "$DEVELOPER_ID" --component-plist "${TMP_PLIST}" --identifier "${IDENTIFIER}" --version "${VERSION}" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
+	if ! /usr/bin/pkgbuild --component "${SOURCE%/}" --install-location "${DESTINATION}" --sign "$DEVELOPER_ID" --identifier "${IDENTIFIER}" --version "${VERSION}" "${PKGPATH}${PREFIX}${NAME}${SUFFIX}${VERSION}.pkg" 2> /dev/null; then
 		echo "An error occurred while building the package."
 		exit $LINENO
 	fi
