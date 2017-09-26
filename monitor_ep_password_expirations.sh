@@ -24,7 +24,7 @@
 
 
 function installPwdmonitor() {
-	
+
 	#	install script to local bin with short name 
 	if [ ! -x /usr/local/bin/pwdmonitor ]; then /usr/bin/install -o 0 -g 0 "$0" /usr/local/bin/pwdmonitor; fi
 
@@ -126,13 +126,13 @@ ADMINS=(`/usr/bin/dscl /Local/Default -list /Users UniqueID | /usr/bin/awk '$2 >
 for ADMIN in ${ADMINS[@]}; do 
 
 	#	if admin matches elevated privilege format 
-	if echo ADMIN | /usr/bin/tr [:lower:] [:upper:] | /usr/bin/grep -E "^[ADEPW]{2}\-.*?"; then 
+	if echo $ADMIN | /usr/bin/tr [:lower:] [:upper:] | /usr/bin/grep -E "^[ADEPW]{2}\-.*?" &> /dev/null; then 
 
 		#	get original node location 
 		NODE_NAME=`/usr/bin/dscl . read /Users/$ADMIN OriginalNodeName | /usr/bin/awk '/^OriginalNodeName:/ {getline; print}'`
 
 		#	get epoch date password set to expire
-		EPOCH_MAXAGE=`/usr/bin/dscl "${NODE_NAME#?}" read /Users/$ADMIN msDS-UserPasswordExpiryTimeComputed | /usr/bin/awk '/dsAttrTypeNative:msDS-UserPasswordExpiryTimeComputed:/ {printf "%.0f", $2/10000000-11644473600}'`
+		EPOCH_PWDEXP=`/usr/bin/dscl "${NODE_NAME#?}" read /Users/$ADMIN msDS-UserPasswordExpiryTimeComputed | /usr/bin/awk '/dsAttrTypeNative:msDS-UserPasswordExpiryTimeComputed:/ {printf "%.0f", $2/10000000-11644473600}'`
 		
 		#	get epoch date password was last set
 		EPOCH_PWDSET=`/usr/bin/dscl "${NODE_NAME#?}" read /Users/$ADMIN pwdLastSet | /usr/bin/awk '/pwdLastSet:/ {printf "%.0f", $2/10000000-11644473600}'`
@@ -141,10 +141,10 @@ for ADMIN in ${ADMINS[@]}; do
 		EPOCH_TODAY=`/bin/date "+%s"`
 
 		#	calculate how many days before password expires
-		DAYS_PWDEXP=`/bin/expr \( $EPOCH_MAXAGE - $EPOCH_TODAY \) / 86400` 
+		DAYS_PWDEXP=`/bin/expr \( $EPOCH_PWDEXP - $EPOCH_TODAY \) / 86400` 
 
 		#	convert epoch date password set to expire into standard date and time format
-		DATE_PWDEXP=`/bin/date -j -f %s $EPOCH_MAXAGE`
+		DATE_PWDEXP=`/bin/date -j -f %s $EPOCH_PWDEXP`
 
 		#	echo for debug
 		if $DEBUG; then
