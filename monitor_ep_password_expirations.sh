@@ -24,10 +24,11 @@
 
 
 function installPwdmonitor() {
-
+	
 	#	install script to local bin with short name 
 	if [ ! -x /usr/local/bin/pwdmonitor ]; then /usr/bin/install -o 0 -g 0 "$0" /usr/local/bin/pwdmonitor; fi
 
+	#	write xml to launch daemon
 	echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?> 
 		<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"> 
 		<plist version=\"1.0\"> 
@@ -49,7 +50,6 @@ function installPwdmonitor() {
 			</dict>
 		</dict>
 		</plist>" | /usr/bin/xmllint --format - > /Library/LaunchDaemons/com.thomsontown.pwdmonitor.plist
-
 
 	#	set permissions and launch daemon
 	/usr/sbin/chown root:wheel /Library/LaunchDaemons/com.thomsontown.pwdmonitor.plist
@@ -112,10 +112,10 @@ function changePassword() {
 
 
 #	check for install
-	if [ $EUID -eq 0 ] && ([ ! -x /usr/local/bin/pwdmonitor ] || [ ! -f /Library/LaunchDaemons/com.thomsontown.pwdmonitor.plist ] || ! /bin/launchctl list | /usr/bin/grep "com.thomsontown.pwdmonitor" &> /dev/null); then
-		if $DEBUG; then echo "Installing pwdmonitor . . ."; fi
-		installPwdmonitor
-	fi
+if [ $EUID -eq 0 ] && ([ ! -x /usr/local/bin/pwdmonitor ] || [ ! -f /Library/LaunchDaemons/com.thomsontown.pwdmonitor.plist ] || ! /bin/launchctl list | /usr/bin/grep "com.thomsontown.pwdmonitor" &> /dev/null); then
+	if $DEBUG; then echo "Installing pwdmonitor . . ."; fi
+	installPwdmonitor
+fi
 
 
 #	get domain user admins
