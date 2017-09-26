@@ -9,8 +9,8 @@
 #    to the user with the option to change the passwords.
 
 #    This script was born out of a need whereby elevated mobile domain 
-#    credentials are required by users logged in with a standard 
-#    account to make specific changes or to respond to an elevated 
+#    credentials are required by users logged in with standard 
+#    accounts to make specific changes or to respond to elevated 
 #    credential prompts for package installs. 
 
 #    Since these elevated accounts are not intended to be directly 
