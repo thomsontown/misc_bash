@@ -23,6 +23,42 @@
 #    GitHub:    https://github.com/thomsontown
 
 
+function installPwdmonitor() {
+
+	#	install script to local bin with short name 
+	if [ ! -x /usr/local/bin/pwdmonitor ]; then /usr/bin/install -o 0 -g 0 "$0" /usr/local/bin/pwdmonitor; fi
+
+	echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?> 
+		<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"> 
+		<plist version=\"1.0\"> 
+		<dict>
+			<key>Label</key>
+			<string>com.thomsontown.pwdmonitor</string>
+			<key>ProgramArguments</key>
+			<array>
+				<string>/usr/local/bin/pwdmonitor</string>
+			</array>
+			<key>RunAtLoad</key>
+			<true/>
+			<key>StartCalendarInterval</key>
+			<dict>
+				<key>Hour</key>
+				<integer>12</integer>
+				<key>Minute</key>
+				<integer>0</integer>
+			</dict>
+		</dict>
+		</plist>" | /usr/bin/xmllint --format - > /Library/LaunchDaemons/com.thomsontown.pwdmonitor.plist
+
+
+	#	set permissions and launch daemon
+	/usr/sbin/chown root:wheel /Library/LaunchDaemons/com.thomsontown.pwdmonitor.plist
+	/bin/chmod 644 /Library/LaunchDaemons/com.thomsontown.pwdmonitor.plist
+	/bin/launchctl load -w /Library/LaunchDaemons/com.thomsontown.pwdmonitor.plist
+}
+
+
+
 function getPassword() {
 	/usr/bin/osascript -e  "text returned of (display dialog \"$1\" default answer \"\" with hidden answer with title \"Password Change\" buttons {\"Ok\"} default button \"Ok\")"
 }
@@ -75,6 +111,13 @@ function changePassword() {
 }
 
 
+#	check for install
+	if [ $EUID -eq 0 ] && ([ ! -x /usr/local/bin/pwdmonitor ] || [ ! -f /Library/LaunchDaemons/com.thomsontown.pwdmonitor.plist ] || ! /bin/launchctl list | /usr/bin/grep "com.thomsontown.pwdmonitor" &> /dev/null); then
+		if $DEBUG; then echo "Installing pwdmonitor . . ."; fi
+		installPwdmonitor
+	fi
+
+
 #	get domain user admins
 ADMINS=(`/usr/bin/dscl /Local/Default -list /Users UniqueID | /usr/bin/awk '$2 >= 1000000 { print $1 }'`)
 
@@ -102,6 +145,13 @@ for ADMIN in ${ADMINS[@]}; do
 
 		#	convert epoch date password set to expire into standard date and time format
 		DATE_PWDEXP=`/bin/date -j -f %s $EPOCH_MAXAGE`
+
+		#	echo for debug
+		if $DEBUG; then
+			echo "ID:      $ADMIN"
+			echo "DAYS:    $DAYS_PWDEXP"
+			echo "DATE:    $DATE_PWDEXP"
+		fi
 
 		#	check if expiration date soon
 		if [ $DAYS_PWDEXP -le 5 ]; then
