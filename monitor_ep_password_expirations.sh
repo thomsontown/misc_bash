@@ -18,9 +18,9 @@
 #    are due to expire. This script not only provides notification, but 
 #    also a step-by-step method for changing the elevated account passwords.
 
-#    Author:	Andrew Thomson
-#    Date:		2017-09-25
-#    GitHub:	https://github.com/thomsontown
+#    Author:    Andrew Thomson
+#    Date:      2017-09-25
+#    GitHub:    https://github.com/thomsontown
 
 
 function getPassword() {
