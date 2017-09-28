@@ -16,7 +16,7 @@ IFS=$'\n'
 
 #	create array of all files and their complete cksum information including path
 echo "Searching for files . . ."
-ARRAY_ALL_FILES=(`/usr/bin/find "${1:-.}" \! -type d -exec /usr/bin/cksum "{}" \; 2> /dev/null`)
+ARRAY_ALL_FILES=(`/usr/bin/find "${1:-.}" -type f  -exec /usr/bin/cksum "{}" \;`)
 if $DEBUG; then echo "TOTAL FILES: ${#ARRAY_ALL_FILES[@]}"; fi
 
 
